@@ -3,7 +3,7 @@
 ## Demo (GitHub Pages)
 
 URL:
-`https://<your-github-username>.github.io/<repo_name>/`
+`https://sapporoendo.github.io/tachograph_ocr/`
 
 This demo is built with `DEMO_MODE=true` and does not require the FastAPI backend.
 
@@ -48,7 +48,7 @@ flutter run -d chrome --dart-define=ANALYZER_API_BASE_URL=http://127.0.0.1:8000
 ## Build for GitHub Pages
 
 ```sh
-flutter build web --release --dart-define=DEMO_MODE=true --base-href "/<repo_name>/"
+flutter build web --release --dart-define=DEMO_MODE=true --base-href "/tachograph_ocr/" --no-tree-shake-icons
 ```
 
 ## GitHub Actions deploy
