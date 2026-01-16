@@ -1,5 +1,8 @@
 import base64
+import io
 from typing import Any, Dict, Optional
+
+from PIL import Image
 
 
 def _result_base() -> Dict[str, Any]:
@@ -12,8 +15,14 @@ def _result_base() -> Dict[str, Any]:
 
 
 def make_debug_image_base64(image_bytes: bytes) -> str:
-    _ = image_bytes
-    return base64.b64encode(b"").decode("ascii")
+    img = Image.open(io.BytesIO(image_bytes))
+    if img.mode not in ("RGB", "RGBA"):
+        img = img.convert("RGB")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    png_bytes = buf.getvalue()
+    return base64.b64encode(png_bytes).decode("ascii")
 
 
 def analyze_image(
