@@ -33,10 +33,20 @@ flutter run -d chrome --dart-define=DEMO_MODE=true
 
 ### Normal mode (with backend)
 
-Backend (in `backend/`):
+Backend (in `api/`):
 
 ```sh
-python -m uvicorn app.main:app --reload --port 8000
+python3 -m pip install -r requirements.txt
+python3 -m uvicorn api.main:app --reload --port 8000
+```
+
+Test with curl:
+
+```sh
+curl -s -X POST "http://127.0.0.1:8000/analyze" \
+  -F "file=@/path/to/tachograph.jpg" \
+  -F "chartType=24h" \
+  -F "midnightOffsetDeg=0"
 ```
 
 Flutter:
