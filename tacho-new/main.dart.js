@@ -90420,7 +90420,7 @@ A.zv.prototype={
 ag(){return new A.EW(B.bD,B.bD,new A.CO(B.zT,$.am()))}}
 A.EW.prototype={
 ao(){this.aI()
-this.d=new A.a_u("https://tachograph-ocr-api.onrender.com",!1)
+this.d=new A.a_u("https://tachograph-ocr.onrender.com",!1)
 this.tY()},
 l(){var s=this.ax
 s.R$=$.am()
