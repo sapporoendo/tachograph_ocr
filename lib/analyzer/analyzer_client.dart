@@ -9,13 +9,23 @@ class AnalyzerClient {
   final String baseUrl;
   final bool demoMode;
 
+  static String _normalizeBaseUrl(String url) {
+    var u = url.trim();
+    while (u.endsWith('/')) {
+      u = u.substring(0, u.length - 1);
+    }
+    return u;
+  }
+
   AnalyzerClient({String? baseUrl, bool? demoMode})
-      : baseUrl = (baseUrl == null || baseUrl.isEmpty)
-            ? const String.fromEnvironment(
-                'ANALYZER_API_BASE_URL',
-                defaultValue: 'http://127.0.0.1:8000',
-              )
-            : baseUrl,
+      : baseUrl = _normalizeBaseUrl(
+          (baseUrl == null || baseUrl.isEmpty)
+              ? const String.fromEnvironment(
+                  'ANALYZER_API_BASE_URL',
+                  defaultValue: 'http://127.0.0.1:8000',
+                )
+              : baseUrl,
+        ),
         demoMode = demoMode ??
             const bool.fromEnvironment('DEMO_MODE', defaultValue: false);
 
