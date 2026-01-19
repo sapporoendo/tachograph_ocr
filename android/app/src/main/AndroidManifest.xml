@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA" />
     <application
-        android:label="tachograph_ocr"
+        android:label="たこみる"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -52,7 +52,11 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('履歴一覧'),
+        title: Image.asset(
+          'assets/images/takomiru_logo.png',
+          height: 28,
+          fit: BoxFit.contain,
+        ),
         actions: [
           IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
         ],
@@ -80,21 +84,37 @@ class _HistoryPageState extends State<HistoryPage> {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final r = rows[i];
-                final title = '${r.vehicleNo ?? "--"} / ${r.driverName ?? "--"}';
-                final subtitle = '${r.createdAt}${r.distanceKm == null ? '' : ' / ${r.distanceKm!.toStringAsFixed(1)} km'}';
+                final title =
+                    '${r.vehicleNo ?? "--"} / ${r.driverName ?? "--"}';
+                final subtitle =
+                    '${r.createdAt}${r.distanceKm == null ? '' : ' / ${r.distanceKm!.toStringAsFixed(1)} km'}';
                 return ListTile(
-                  title: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                  subtitle: Text(subtitle, style: const TextStyle(fontSize: 14)),
+                  title: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 14),
+                  ),
                   trailing: Icon(
                     r.checked ? Icons.verified : Icons.hourglass_bottom,
-                    color: r.checked ? const Color(0xFF2E7D32) : const Color(0xFF666666),
+                    color: r.checked
+                        ? const Color(0xFF2E7D32)
+                        : const Color(0xFF666666),
                     size: 28,
                   ),
                   minVerticalPadding: 16,
                   onTap: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => RecordDetailPage(client: widget.client, recordId: r.id),
+                        builder: (_) => RecordDetailPage(
+                          client: widget.client,
+                          recordId: r.id,
+                        ),
                       ),
                     );
                     await _reload();
@@ -113,7 +133,11 @@ class RecordDetailPage extends StatefulWidget {
   final AnalyzerClient client;
   final String recordId;
 
-  const RecordDetailPage({super.key, required this.client, required this.recordId});
+  const RecordDetailPage({
+    super.key,
+    required this.client,
+    required this.recordId,
+  });
 
   @override
   State<RecordDetailPage> createState() => _RecordDetailPageState();
@@ -129,7 +153,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Future<RecordDetail> _load() async {
-    final uri = Uri.parse('${widget.client.baseUrl}/records/${widget.recordId}');
+    final uri = Uri.parse(
+      '${widget.client.baseUrl}/records/${widget.recordId}',
+    );
     final res = await http.get(uri);
     if (res.statusCode != 200) {
       throw Exception('HTTP ${res.statusCode}: ${res.body}');
@@ -142,7 +168,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Future<void> _setChecked(bool checked) async {
-    final uri = Uri.parse('${widget.client.baseUrl}/records/${widget.recordId}/checked');
+    final uri = Uri.parse(
+      '${widget.client.baseUrl}/records/${widget.recordId}/checked',
+    );
     final res = await http.patch(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -159,7 +187,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('履歴詳細')),
+      appBar: AppBar(
+        title: Image.asset(
+          'assets/images/takomiru_logo.png',
+          height: 28,
+          fit: BoxFit.contain,
+        ),
+      ),
       body: FutureBuilder<RecordDetail>(
         future: _future,
         builder: (context, snap) {
@@ -173,17 +207,27 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             );
           }
           final r = snap.data!;
-          final debugUrl = '${widget.client.baseUrl}/records/${widget.recordId}/debug.png';
+          final debugUrl =
+              '${widget.client.baseUrl}/records/${widget.recordId}/debug.png';
           final title = '${r.vehicleNo ?? "--"} / ${r.driverName ?? "--"}';
-          final subtitle = '${r.createdAt}${r.distanceKm == null ? '' : ' / ${r.distanceKm!.toStringAsFixed(1)} km'}';
+          final subtitle =
+              '${r.createdAt}${r.distanceKm == null ? '' : ' / ${r.distanceKm!.toStringAsFixed(1)} km'}';
 
           final segments = r.analysis['segments'];
-          final segList = segments is List ? segments.whereType<Map>().toList() : const <Map>[];
+          final segList = segments is List
+              ? segments.whereType<Map>().toList()
+              : const <Map>[];
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(subtitle),
               const SizedBox(height: 12),
@@ -192,8 +236,15 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                   Expanded(
                     child: FilledButton.tonalIcon(
                       onPressed: () => _setChecked(!r.checked),
-                      icon: Icon(r.checked ? Icons.check_circle : Icons.radio_button_unchecked),
-                      label: Text(r.checked ? '確認済み' : '未確認', style: const TextStyle(fontSize: 18)),
+                      icon: Icon(
+                        r.checked
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                      ),
+                      label: Text(
+                        r.checked ? '確認済み' : '未確認',
+                        style: const TextStyle(fontSize: 18),
+                      ),
                     ),
                   ),
                 ],
@@ -201,10 +252,17 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(debugUrl, fit: BoxFit.contain, errorBuilder: (c, e, s) => Text('画像取得エラー: $e')),
+                child: Image.network(
+                  debugUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => Text('画像取得エラー: $e'),
+                ),
               ),
               const SizedBox(height: 12),
-              const Text('セグメント', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const Text(
+                'セグメント',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 8),
               if (segList.isEmpty) const Text('セグメントなし'),
               for (final s in segList)
@@ -220,13 +278,19 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       Expanded(
                         child: Text(
                           '${(s['start'] ?? '--')} 〜 ${(s['end'] ?? '--')}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         (s['type'] ?? 'UNKNOWN').toString(),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),

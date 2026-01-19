@@ -29,7 +29,10 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  Future<String?> _promptText({required String title, String initialValue = ''}) async {
+  Future<String?> _promptText({
+    required String title,
+    String initialValue = '',
+  }) async {
     final controller = TextEditingController(text: initialValue);
     return showDialog<String>(
       context: context,
@@ -42,9 +45,13 @@ class _SettingsPageState extends State<SettingsPage> {
             style: const TextStyle(fontSize: 20),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('キャンセル')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('キャンセル'),
+            ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
               child: const Text('保存'),
             ),
           ],
@@ -96,8 +103,14 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('削除しますか？'),
         content: Text('車両番号: $v'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('キャンセル')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('削除')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('削除'),
+          ),
         ],
       ),
     );
@@ -115,8 +128,14 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('削除しますか？'),
         content: Text('ドライバー: $v'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('キャンセル')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('削除')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('削除'),
+          ),
         ],
       ),
     );
@@ -135,7 +154,11 @@ class _SettingsPageState extends State<SettingsPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('設定（マスター管理）'),
+          title: Image.asset(
+            'assets/images/takomiru_logo.png',
+            height: 28,
+            fit: BoxFit.contain,
+          ),
           bottom: const TabBar(
             tabs: [
               Tab(text: '車両'),
@@ -183,7 +206,10 @@ class _SettingsPageState extends State<SettingsPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               FilledButton.icon(
@@ -202,7 +228,13 @@ class _SettingsPageState extends State<SettingsPage> {
             itemBuilder: (context, i) {
               final v = items[i];
               return ListTile(
-                title: Text(v, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                title: Text(
+                  v,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 subtitle: const Text('タップで編集', style: TextStyle(fontSize: 14)),
                 onTap: () => onRename(v),
                 trailing: IconButton(

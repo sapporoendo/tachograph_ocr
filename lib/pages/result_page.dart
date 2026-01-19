@@ -7,8 +7,17 @@ import '../analyzer/models.dart';
 
 class ResultPage extends StatelessWidget {
   final AnalyzeResult result;
+  final double? distanceBeforeKm;
+  final double? distanceAfterKm;
+  final double? distanceTotalKm;
 
-  const ResultPage({super.key, required this.result});
+  const ResultPage({
+    super.key,
+    required this.result,
+    this.distanceBeforeKm,
+    this.distanceAfterKm,
+    this.distanceTotalKm,
+  });
 
   String _toCsv() {
     final lines = <String>[];
@@ -34,6 +43,8 @@ class ResultPage extends StatelessWidget {
   }
 
   String _valueOrDash(String? v) => (v == null || v.isEmpty) ? '--' : v;
+
+  String _kmOrDash(double? v) => (v == null) ? '--' : v.toStringAsFixed(1);
 
   bool _isDrive(String type) => type.trim().toUpperCase() == 'DRIVE';
 
@@ -75,7 +86,8 @@ class ResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final csv = _toCsv();
-    final t = result.needleTimeHHMM ?? result.meta?['needleTimeHHMM']?.toString();
+    final t =
+        result.needleTimeHHMM ?? result.meta?['needleTimeHHMM']?.toString();
     final recordId = result.recordId;
     final debugBytes = _tryDecodeBase64Image(result.debugImageBase64);
     final circle = result.meta?['circle'];
@@ -91,15 +103,97 @@ class ResultPage extends StatelessWidget {
     const unknownBg = Color(0xFFF2F2F2);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('解析結果')),
+      appBar: AppBar(
+        title: Image.asset(
+          'assets/images/takomiru_logo.png',
+          height: 28,
+          fit: BoxFit.contain,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF333333), width: 2),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '運行の全体像',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '時刻: ${t ?? "--:--"}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '走行前: ${_kmOrDash(distanceBeforeKm)} km',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '走行後: ${_kmOrDash(distanceAfterKm)} km',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '合計距離: ${_kmOrDash(distanceTotalKm)} km',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (recordId != null && recordId.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '保存ID: $recordId',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             Center(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFF333333), width: 2),
@@ -109,20 +203,32 @@ class ResultPage extends StatelessWidget {
                     Text(
                       '走行 合計: ${_minutesToJa(totals.drive)}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: driveColor),
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        color: driveColor,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '休憩 合計: ${_minutesToJa(totals.rest)}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: restColor),
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        color: restColor,
+                      ),
                     ),
                     if (totals.unknown > 0) ...[
                       const SizedBox(height: 6),
                       Text(
                         '不明 合計: ${totals.unknown}分',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: unknownColor),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: unknownColor,
+                        ),
                       ),
                     ],
                   ],
@@ -131,21 +237,6 @@ class ResultPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Text(
-                    '時刻: ${t ?? "--:--"}',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-                  ),
-                ),
-              ],
-            ),
-            if (recordId != null && recordId.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text('保存ID: $recordId', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            ],
             const SizedBox(height: 10),
 
             if (result.errorCode != null) ...[
@@ -190,10 +281,7 @@ class ResultPage extends StatelessWidget {
                       child: InteractiveViewer(
                         minScale: 1.0,
                         maxScale: 4.0,
-                        child: Image.memory(
-                          debugBytes,
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.memory(debugBytes, fit: BoxFit.contain),
                       ),
                     ),
                   ),
@@ -209,12 +297,17 @@ class ResultPage extends StatelessWidget {
               title: const Text('デバッグ情報'),
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('circle: ${circle ?? "--"}'),
-                      Text('needleAngleDeg: ${result.needleAngleDeg?.toStringAsFixed(1) ?? "--"}'),
+                      Text(
+                        'needleAngleDeg: ${result.needleAngleDeg?.toStringAsFixed(1) ?? "--"}',
+                      ),
                       Text('needleTimeHHMM: ${_valueOrDash(t)}'),
                       if (polarLog != null) Text('polarLog: $polarLog'),
                     ],
@@ -227,7 +320,10 @@ class ResultPage extends StatelessWidget {
             if (result.needsReviewMinutes > 0) ...[
               Text(
                 '要確認 ${result.needsReviewMinutes}分',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 10),
             ],
@@ -268,13 +364,13 @@ class ResultPage extends StatelessWidget {
                 final barColor = isDrive
                     ? driveColor
                     : isRest
-                        ? restColor
-                        : unknownColor;
+                    ? restColor
+                    : unknownColor;
                 final bgColor = isDrive
                     ? driveBg
                     : isRest
-                        ? restBg
-                        : unknownBg;
+                    ? restBg
+                    : unknownBg;
                 final textColor = barColor;
 
                 return IntrinsicHeight(
@@ -291,11 +387,17 @@ class ResultPage extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: bgColor,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF333333), width: 1),
+                            border: Border.all(
+                              color: const Color(0xFF333333),
+                              width: 1,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +436,11 @@ class ResultPage extends StatelessWidget {
                                 const SizedBox(height: 6),
                                 Text(
                                   s.confidence,
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF333333)),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF333333),
+                                  ),
                                 ),
                               ],
                             ],

@@ -8,7 +8,13 @@ class ErrorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('解析エラー')),
+      appBar: AppBar(
+        title: Image.asset(
+          'assets/images/takomiru_logo.png',
+          height: 28,
+          fit: BoxFit.contain,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -34,9 +40,7 @@ class ErrorPage extends StatelessWidget {
                   border: Border.all(),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: SingleChildScrollView(
-                  child: Text(message),
-                ),
+                child: SingleChildScrollView(child: Text(message)),
               ),
             ),
             const SizedBox(height: 12),
