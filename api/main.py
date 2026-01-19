@@ -24,6 +24,10 @@ def _startup() -> None:
 
 
 def _parse_cors_allow_origins() -> list[str]:
+    allow_all = os.getenv("CORS_ALLOW_ALL", "").strip().lower() in ("1", "true", "yes", "on")
+    if allow_all:
+        return ["*"]
+
     v = os.getenv("CORS_ALLOW_ORIGINS", "*").strip()
     if not v:
         return ["*"]
@@ -43,7 +47,10 @@ def _parse_cors_allow_origins() -> list[str]:
         return o
 
     parts = [_norm(p) for p in v.split(",")]
-    return [p for p in parts if p]
+    parts = [p for p in parts if p]
+    if "*" in parts:
+        return ["*"]
+    return parts
 
 app.add_middleware(
     CORSMiddleware,
