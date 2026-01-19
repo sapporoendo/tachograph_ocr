@@ -3539,6 +3539,22 @@ def analyze_image(
                 diag["segmentsMethodChosen"] = chosen_method
                 diag["segmentsMethodReason"] = method_reason
 
+                drive_total = 0
+                stop_total = 0
+                for seg in segments:
+                    if not isinstance(seg, dict):
+                        continue
+                    t = str(seg.get("type") or "").strip().upper()
+                    dur = int(seg.get("durationMinutes") or 0)
+                    if dur < 0:
+                        continue
+                    if t == "DRIVE":
+                        drive_total += dur
+                    elif t in ("IDLE", "STOP"):
+                        stop_total += dur
+                res["totalDrivingMinutes"] = int(drive_total)
+                res["totalStopMinutes"] = int(stop_total)
+
                 params = segments_info.get("params") or {}
                 if isinstance(params, dict):
                     if "twelveAngleOffsetDeg" in params:

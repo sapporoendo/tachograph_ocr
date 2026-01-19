@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -8,6 +9,8 @@ import 'models.dart';
 class AnalyzerClient {
   final String baseUrl;
   final bool demoMode;
+
+  static const Duration _requestTimeout = Duration(seconds: 120);
 
   static String _normalizeBaseUrl(String url) {
     var u = url.trim();
@@ -79,7 +82,14 @@ class AnalyzerClient {
       req.fields['midnightOffsetDeg'] = midnightOffsetDeg.toString();
     }
 
-    final res = await req.send();
+    http.StreamedResponse res;
+    try {
+      res = await req.send().timeout(_requestTimeout);
+    } on TimeoutException {
+      throw Exception('Request timeout (${_requestTimeout.inSeconds}s): $baseUrl/analyze');
+    } catch (e) {
+      throw Exception('Failed to reach API: $baseUrl/analyze ($e)');
+    }
     final body = await res.stream.bytesToString();
 
     if (res.statusCode != 200) {
@@ -140,8 +150,48 @@ class AnalyzerClient {
       req.fields['midnightOffsetDeg'] = midnightOffsetDeg.toString();
     }
 
-    final res = await req.send();
+    http.StreamedResponse res;
+    try {
+      res = await req.send().timeout(_requestTimeout);
+    } on TimeoutException {
+      throw Exception('Request timeout (${_requestTimeout.inSeconds}s): $baseUrl/records');
+    } catch (e) {
+      throw Exception('Failed to reach API: $baseUrl/records ($e)');
+    }
     final body = await res.stream.bytesToString();
+    if (res.statusCode == 404) {
+      final fallbackUri = Uri.parse('$baseUrl/analyze');
+      final fallbackReq = http.MultipartRequest('POST', fallbackUri)
+        ..files.add(
+          http.MultipartFile.fromBytes('file', imageBytes, filename: filename),
+        );
+      if (chartType != null && chartType.isNotEmpty) {
+        fallbackReq.fields['chartType'] = chartType;
+      }
+      if (midnightOffsetDeg != null) {
+        fallbackReq.fields['midnightOffsetDeg'] = midnightOffsetDeg.toString();
+      }
+
+      try {
+        final fallbackRes = await fallbackReq.send().timeout(_requestTimeout);
+        final fallbackBody = await fallbackRes.stream.bytesToString();
+        if (fallbackRes.statusCode != 200) {
+          throw Exception('HTTP ${fallbackRes.statusCode}: $fallbackBody');
+        }
+        final decoded = jsonDecode(fallbackBody);
+        if (decoded is! Map) {
+          throw Exception('Invalid response: $fallbackBody');
+        }
+        return AnalyzeResult.fromJson(decoded.cast<String, dynamic>());
+      } on TimeoutException {
+        throw Exception('Request timeout (${_requestTimeout.inSeconds}s): $baseUrl/analyze');
+      } catch (e) {
+        throw Exception(
+          'Endpoint not found: $baseUrl/records (HTTP 404). ' 
+          'Tried fallback $baseUrl/analyze but failed: $e. Response: $body',
+        );
+      }
+    }
     if (res.statusCode != 200) {
       throw Exception('HTTP ${res.statusCode}: $body');
     }
