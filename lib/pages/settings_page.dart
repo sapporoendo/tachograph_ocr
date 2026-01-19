@@ -224,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
         Expanded(
           child: ListView.separated(
             itemCount: items.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, i) {
               final v = items[i];
               return ListTile(

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import '../analyzer/models.dart';
 
-class ResultPage extends StatelessWidget {
+class ResultPage extends StatefulWidget {
   final AnalyzeResult result;
   final double? distanceBeforeKm;
   final double? distanceAfterKm;
@@ -19,15 +18,37 @@ class ResultPage extends StatelessWidget {
     this.distanceTotalKm,
   });
 
+  @override
+  State<ResultPage> createState() => _ResultPageState();
+}
+
+class _ResultPageState extends State<ResultPage> {
+  late List<Segment> _segments;
+  late int _initialDriveMinutes;
+
+  @override
+  void initState() {
+    super.initState();
+    _segments = List<Segment>.from(widget.result.segments);
+    _initialDriveMinutes = _sumByType(widget.result.segments).drive;
+  }
+
+  void _removeSegmentAt(int index) {
+    setState(() {
+      _segments.removeAt(index);
+    });
+  }
+
   String _toCsv() {
+    final totals = _sumByType(_segments);
     final lines = <String>[];
     lines.add('driving_minutes,stop_minutes,needs_review_minutes');
     lines.add(
-      '${result.totalDrivingMinutes},${result.totalStopMinutes},${result.needsReviewMinutes}',
+      '${totals.drive},${totals.rest},${widget.result.needsReviewMinutes}',
     );
     lines.add('');
     lines.add('start,end,type,confidence');
-    for (final s in result.segments) {
+    for (final s in _segments) {
       lines.add('${s.start},${s.end},${s.type},${s.confidence}');
     }
     return lines.join('\n');
@@ -63,7 +84,7 @@ class ResultPage extends StatelessWidget {
     final m = minutes < 0 ? 0 : minutes;
     final h = m ~/ 60;
     final mm = m % 60;
-    return '${h}時間${mm}分';
+    return '$h時間$mm分';
   }
 
   ({int drive, int rest, int unknown}) _sumByType(List<Segment> segments) {
@@ -83,17 +104,30 @@ class ResultPage extends StatelessWidget {
     return (drive: drive, rest: rest, unknown: unknown);
   }
 
+  double? _estimatedDistanceTotalKm({required int currentDriveMinutes}) {
+    final totalKm = widget.distanceTotalKm;
+    if (totalKm == null) return null;
+    if (_initialDriveMinutes <= 0) return totalKm;
+    final v = totalKm * currentDriveMinutes / _initialDriveMinutes;
+    if (v.isNaN || v.isInfinite) return totalKm;
+    return v;
+  }
+
   @override
   Widget build(BuildContext context) {
     final csv = _toCsv();
     final t =
-        result.needleTimeHHMM ?? result.meta?['needleTimeHHMM']?.toString();
-    final recordId = result.recordId;
-    final debugBytes = _tryDecodeBase64Image(result.debugImageBase64);
-    final circle = result.meta?['circle'];
-    final polarLog = result.meta?['polarLog']?.toString();
+        widget.result.needleTimeHHMM ??
+        widget.result.meta?['needleTimeHHMM']?.toString();
+    final recordId = widget.result.recordId;
+    final debugBytes = _tryDecodeBase64Image(widget.result.debugImageBase64);
+    final circle = widget.result.meta?['circle'];
+    final polarLog = widget.result.meta?['polarLog']?.toString();
 
-    final totals = _sumByType(result.segments);
+    final totals = _sumByType(_segments);
+    final distanceTotalKmEstimated = _estimatedDistanceTotalKm(
+      currentDriveMinutes: totals.drive,
+    );
 
     const driveColor = Color(0xFFFF6F00);
     const driveBg = Color(0xFFFFF3E0);
@@ -147,7 +181,7 @@ class ResultPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '走行前: ${_kmOrDash(distanceBeforeKm)} km',
+                          '走行前: ${_kmOrDash(widget.distanceBeforeKm)} km',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -156,7 +190,7 @@ class ResultPage extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          '走行後: ${_kmOrDash(distanceAfterKm)} km',
+                          '走行後: ${_kmOrDash(widget.distanceAfterKm)} km',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -167,7 +201,7 @@ class ResultPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '合計距離: ${_kmOrDash(distanceTotalKm)} km',
+                    '合計距離: ${_kmOrDash(distanceTotalKmEstimated ?? widget.distanceTotalKm)} km',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -231,6 +265,18 @@ class ResultPage extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (widget.distanceTotalKm != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        '走行距離 合計（推定）: ${_kmOrDash(distanceTotalKmEstimated)} km',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: driveColor,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -239,7 +285,7 @@ class ResultPage extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            if (result.errorCode != null) ...[
+            if (widget.result.errorCode != null) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -251,11 +297,13 @@ class ResultPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'errorCode: ${result.errorCode}',
+                      'errorCode: ${widget.result.errorCode}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    if (result.message != null) Text(result.message!),
-                    if (result.hint != null) Text('hint: ${result.hint!}'),
+                    if (widget.result.message != null)
+                      Text(widget.result.message!),
+                    if (widget.result.hint != null)
+                      Text('hint: ${widget.result.hint!}'),
                     const SizedBox(height: 8),
                     const Text('撮り直しのコツ：'),
                     const Text('・反射が入らないようにする'),
@@ -288,7 +336,7 @@ class ResultPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-            ] else if ((result.debugImageBase64 ?? '').isNotEmpty) ...[
+            ] else if ((widget.result.debugImageBase64 ?? '').isNotEmpty) ...[
               const Text('デバッグ画像の復元に失敗しました'),
               const SizedBox(height: 8),
             ],
@@ -306,7 +354,7 @@ class ResultPage extends StatelessWidget {
                     children: [
                       Text('circle: ${circle ?? "--"}'),
                       Text(
-                        'needleAngleDeg: ${result.needleAngleDeg?.toStringAsFixed(1) ?? "--"}',
+                        'needleAngleDeg: ${widget.result.needleAngleDeg?.toStringAsFixed(1) ?? "--"}',
                       ),
                       Text('needleTimeHHMM: ${_valueOrDash(t)}'),
                       if (polarLog != null) Text('polarLog: $polarLog'),
@@ -317,9 +365,9 @@ class ResultPage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            if (result.needsReviewMinutes > 0) ...[
+            if (widget.result.needsReviewMinutes > 0) ...[
               Text(
-                '要確認 ${result.needsReviewMinutes}分',
+                '要確認 ${widget.result.needsReviewMinutes}分',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -353,10 +401,10 @@ class ResultPage extends StatelessWidget {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: result.segments.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemCount: _segments.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
-                final s = result.segments[i];
+                final s = _segments[i];
 
                 final isDrive = _isDrive(s.type);
                 final isRest = _isRest(s.type);
@@ -402,13 +450,26 @@ class ResultPage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '${s.start} - ${s.end}',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
-                                  color: textColor,
-                                ),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${s.start} - ${s.end}',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: '削除',
+                                    onPressed: () => _removeSegmentAt(i),
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: textColor,
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 6),
                               Row(

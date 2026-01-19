@@ -169,8 +169,12 @@ class _InputPageState extends State<InputPage> {
     if (bytes == null) return;
     final driver = _selectedDriver;
     final vehicle = _selectedVehicle;
-    if (driver == null || driver.isEmpty || vehicle == null || vehicle.isEmpty)
+    if (driver == null ||
+        driver.isEmpty ||
+        vehicle == null ||
+        vehicle.isEmpty) {
       return;
+    }
 
     final beforeKm = _parseKm(_distanceBeforeKmController.text);
     final afterKm = _parseKm(_distanceAfterKmController.text);
@@ -309,7 +313,8 @@ class _InputPageState extends State<InputPage> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedDriver,
+                        key: ValueKey(_selectedDriver),
+                        initialValue: _selectedDriver,
                         decoration: const InputDecoration(
                           labelText: 'ドライバー',
                           border: OutlineInputBorder(),
@@ -349,7 +354,8 @@ class _InputPageState extends State<InputPage> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedVehicle,
+                        key: ValueKey(_selectedVehicle),
+                        initialValue: _selectedVehicle,
                         decoration: const InputDecoration(
                           labelText: '車両番号',
                           border: OutlineInputBorder(),
@@ -514,7 +520,7 @@ class _InputPageState extends State<InputPage> {
           if (_running)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 child: Center(
                   child: Container(
                     padding: const EdgeInsets.all(18),
