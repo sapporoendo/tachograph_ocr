@@ -9,14 +9,15 @@ class AnalyzerClient {
   final String baseUrl;
   final bool demoMode;
 
-  AnalyzerClient({String? baseUrl})
+  AnalyzerClient({String? baseUrl, bool? demoMode})
       : baseUrl = (baseUrl == null || baseUrl.isEmpty)
             ? const String.fromEnvironment(
                 'ANALYZER_API_BASE_URL',
-                defaultValue: 'http://localhost:8000',
+                defaultValue: 'http://127.0.0.1:8000',
               )
             : baseUrl,
-        demoMode = const bool.fromEnvironment('DEMO_MODE', defaultValue: false);
+        demoMode = demoMode ??
+            const bool.fromEnvironment('DEMO_MODE', defaultValue: false);
 
   Future<AnalyzeResult> analyze({
     required Uint8List imageBytes,
@@ -80,6 +81,64 @@ class AnalyzerClient {
       throw Exception('Invalid response: $body');
     }
 
+    return AnalyzeResult.fromJson(decoded.cast<String, dynamic>());
+  }
+
+  Future<AnalyzeResult> createRecord({
+    required Uint8List imageBytes,
+    required String filename,
+    required String driverName,
+    required String vehicleNo,
+    double? distanceKm,
+    String? chartType,
+    double? midnightOffsetDeg,
+  }) async {
+    if (demoMode) {
+      final dummy = {
+        'recordId': 'demo_record_001',
+        'totalDrivingMinutes': 390,
+        'totalStopMinutes': 80,
+        'needsReviewMinutes': 0,
+        'segments': [
+          {
+            'start': '07:20',
+            'end': '16:00',
+            'type': 'DRIVE',
+            'confidence': 'demo',
+            'durationMinutes': 520,
+          },
+        ],
+      };
+      return AnalyzeResult.fromJson(dummy);
+    }
+
+    final uri = Uri.parse('$baseUrl/records');
+    final req = http.MultipartRequest('POST', uri)
+      ..files.add(
+        http.MultipartFile.fromBytes('file', imageBytes, filename: filename),
+      )
+      ..fields['driverName'] = driverName
+      ..fields['vehicleNo'] = vehicleNo;
+
+    if (distanceKm != null) {
+      req.fields['distanceKm'] = distanceKm.toString();
+    }
+    if (chartType != null && chartType.isNotEmpty) {
+      req.fields['chartType'] = chartType;
+    }
+    if (midnightOffsetDeg != null) {
+      req.fields['midnightOffsetDeg'] = midnightOffsetDeg.toString();
+    }
+
+    final res = await req.send();
+    final body = await res.stream.bytesToString();
+    if (res.statusCode != 200) {
+      throw Exception('HTTP ${res.statusCode}: $body');
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! Map) {
+      throw Exception('Invalid response: $body');
+    }
     return AnalyzeResult.fromJson(decoded.cast<String, dynamic>());
   }
 }
