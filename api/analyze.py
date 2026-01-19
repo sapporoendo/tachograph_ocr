@@ -1,3 +1,11 @@
+"""Core tachograph analysis logic.
+
+基本的には編集不要です（解析精度に直結します）。
+UIや起動方法の変更は、まず Flutter 側 / `api/main.py` 側で対応してください。
+解析ロジックを変更する必要がある場合は、必ず事前に相談の上で小さく変更し、
+既存のサンプル画像で結果が崩れていないことを確認してください。
+"""
+
 import base64
 import io
 import math

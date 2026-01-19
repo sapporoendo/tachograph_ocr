@@ -43,6 +43,13 @@ Set the following Repository Variable:
 
 ## Local run
 
+This section is the recommended way to share this repo with other developers.
+
+Goal:
+
+- Run FastAPI backend on your machine
+- Run Flutter (web) frontend and connect it to your local backend
+
 ### Demo mode (no backend)
 
 ```sh
@@ -52,11 +59,25 @@ flutter run -d chrome --dart-define=DEMO_MODE=true
 
 ### Normal mode (with backend)
 
-Backend (in `api/`):
+#### 1) Backend (FastAPI)
+
+Requirements:
+
+- Python 3
+
+Install dependencies and start the server (in repo root):
 
 ```sh
+python3 -m venv .venv
+source .venv/bin/activate
 python3 -m pip install -r requirements.txt
-python3 -m uvicorn api.main:app --reload --port 8000
+python3 -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Check health:
+
+```sh
+curl -s http://127.0.0.1:8000/health
 ```
 
 Test with curl:
@@ -67,6 +88,11 @@ curl -s -X POST "http://127.0.0.1:8000/analyze" \
   -F "chartType=24h" \
   -F "midnightOffsetDeg=0"
 ```
+
+Notes:
+
+- By default, CORS is permissive for local development.
+- If you want to restrict CORS, set `CORS_ALLOW_ORIGINS` (comma-separated).
 
 Generate debug overlay (out.json + debug_overlay.png):
 
@@ -86,11 +112,26 @@ Or:
 make overlay IMAGE=./path/to/tachograph.jpg
 ```
 
-Flutter:
+#### 2) Frontend (Flutter)
+
+In another terminal:
 
 ```sh
+flutter pub get
 flutter run -d chrome --dart-define=ANALYZER_API_BASE_URL=http://127.0.0.1:8000
 ```
+
+Tips:
+
+- If you want to hide the DEMO toggle in the UI:
+
+```sh
+flutter run -d chrome \
+  --dart-define=SHOW_DEMO_TOGGLE=false \
+  --dart-define=ANALYZER_API_BASE_URL=http://127.0.0.1:8000
+```
+
+- If you see a CORS error in Chrome, make sure the backend is running and you are using `http://127.0.0.1:8000` (no trailing slash).
 
 ## Build for GitHub Pages
 
@@ -127,6 +168,8 @@ After the first successful workflow run:
 ## Deploy backend (Render)
 
 This repo includes `render.yaml` for deploying the FastAPI backend.
+
+This is optional for local development.
 
 Important environment variables:
 

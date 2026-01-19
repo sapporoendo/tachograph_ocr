@@ -1,3 +1,9 @@
+"""FastAPI entrypoint.
+
+基本的には編集不要です。
+ローカル起動手順やフロント接続先の変更は README / Flutter 側の設定で対応してください。
+"""
+
 import base64
 import binascii
 import os
