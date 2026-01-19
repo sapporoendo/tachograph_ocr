@@ -1,6 +1,7 @@
 import base64
 import binascii
 import os
+import urllib.parse
 from typing import Any, Dict, Optional
 
 from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
@@ -28,7 +29,20 @@ def _parse_cors_allow_origins() -> list[str]:
         return ["*"]
     if v == "*":
         return ["*"]
-    parts = [p.strip() for p in v.split(",")]
+
+    def _norm(origin: str) -> str:
+        o = origin.strip().strip('"').strip("'")
+        while o.endswith("/"):
+            o = o[:-1]
+        try:
+            u = urllib.parse.urlparse(o)
+            if u.scheme and u.netloc:
+                o = f"{u.scheme}://{u.netloc}"
+        except Exception:
+            pass
+        return o
+
+    parts = [_norm(p) for p in v.split(",")]
     return [p for p in parts if p]
 
 app.add_middleware(
