@@ -77,7 +77,12 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True}
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root() -> dict:
+    return {"status": "ok"}
 
 
 @app.post("/analyze")
