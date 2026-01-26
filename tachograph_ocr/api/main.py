@@ -15,10 +15,17 @@ from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from .analyze import analyze_image, failure_response
 from .history_db import connect, get_record, init_db, insert_record, list_records, save_debug_png_bytes, save_image_bytes, set_checked
 
 app = FastAPI(title="tachograph_ocr api")
+
+
+def _lazy_analyze() -> tuple[Any, Any]:
+    # Importing analyze.py (OpenCV/Pillow/Numpy) can be slow on cold start.
+    # Keep /health fast by importing lazily only when analysis endpoints are called.
+    from .analyze import analyze_image, failure_response
+
+    return analyze_image, failure_response
 
 
 @app.on_event("startup")
@@ -80,6 +87,7 @@ async def analyze(
     chartType: Optional[str] = Form(default=None),
     midnightOffsetDeg: Optional[float] = Form(default=None),
 ) -> dict:
+    analyze_image, failure_response = _lazy_analyze()
     up = file or image
     if up is None:
         return failure_response(
@@ -120,6 +128,7 @@ async def create_record(
     chartType: Optional[str] = Form(default=None),
     midnightOffsetDeg: Optional[float] = Form(default=None),
 ) -> dict:
+    analyze_image, failure_response = _lazy_analyze()
     up = file or image
     if up is None:
         return failure_response(
