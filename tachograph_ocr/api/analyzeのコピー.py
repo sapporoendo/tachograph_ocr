@@ -629,8 +629,8 @@ def detect_circle_hough_fast(bgr: np.ndarray) -> Optional[Dict[str, Any]]:
     g = cv2.medianBlur(gray, 7)
     g = cv2.GaussianBlur(g, (7, 7), 0)
 
-    trials = [(1.2, 120), (1.5, 100)]
-    param2_sweep = [40, 35, 30, 25, 20, 18, 15, 12, 10]
+    trials = [(1.2, 120)]
+    param2_sweep = [30, 25, 20, 15]
     best_ok = None
     used = None
 
@@ -3511,7 +3511,6 @@ def analyze_image(
     time_info: Optional[Dict[str, Any]] = None
     segments_info: Optional[Dict[str, Any]] = None
     trace_meta: Optional[Dict[str, Any]] = None
-    method_reason: Optional[str] = None
 
     if bool(include_debug):
         debug_b64, circle, needle_angle, polar_info, time_info, segments_info, trace_meta = make_debug_image_base64(
@@ -3563,14 +3562,6 @@ def analyze_image(
                 }
             else:
                 circle_work = detect_circle_hough_fast(img_work)
-
-                try:
-                    if isinstance(circle_work, dict) and str(circle_work.get("method")) == "forced_fallback_fast":
-                        circle_try = detect_circle_hough(img_work)
-                        if isinstance(circle_try, dict) and str(circle_try.get("method")) not in ("forced_fallback", "none", "not_found"):
-                            circle_work = circle_try
-                except Exception:
-                    pass
         except Exception as e:
             circle = None
             circle_work = None
@@ -3710,23 +3701,6 @@ def analyze_image(
             res["message"] = "Circle detected but rejected by sanity checks."
             reasons = circle.get("rejectReasons") if isinstance(circle.get("rejectReasons"), dict) else {}
             res["hint"] = f"Circle sanity failed: {reasons}" if reasons else "Circle sanity failed. Try capturing the full chart centered with less background."
-            res["meta"]["debug_info"] = {
-                "circle": circle,
-                "method_reason": method_reason,
-                "img_shape": [int(v) for v in img_probe.shape] if hasattr(img_probe, "shape") else None,
-            }
-            if int(res.get("totalDrivingMinutes") or 0) <= 0:
-                try:
-                    print(
-                        "analyze_image_debug:",
-                        "empty_or_zero=1",
-                        "sha1=", str(img_sha1),
-                        "errorCode=", str(res.get("errorCode") or "-"),
-                        "circleMethod=", str(circle.get("method") if isinstance(circle, dict) else "-"),
-                        "shape=", str(tuple(img_probe.shape)) if hasattr(img_probe, "shape") else "-",
-                    )
-                except Exception:
-                    pass
             return res
 
         if polar_info is not None and isinstance(polar_info, dict):
@@ -3952,26 +3926,6 @@ def analyze_image(
                         res["message"] = f"Day3: segments(minimal) estimated ({method}); type is UNKNOWN."
             else:
                 res["message"] = "Day2: needleAngle->time implemented; segments/driving-stop estimation is next."
-
-    res["meta"]["debug_info"] = {
-        "circle": circle,
-        "method_reason": method_reason,
-        "img_shape": [int(v) for v in img_probe.shape] if hasattr(img_probe, "shape") else None,
-    }
-    if int(res.get("totalDrivingMinutes") or 0) <= 0 or not isinstance(res.get("segments"), list) or len(res.get("segments") or []) == 0:
-        try:
-            print(
-                "analyze_image_debug:",
-                "empty_or_zero=1",
-                "sha1=", str(img_sha1),
-                "errorCode=", str(res.get("errorCode") or "-"),
-                "segmentsMethod=", str((res.get("meta") or {}).get("segmentsMethod") or "-"),
-                "methodReason=", str(method_reason or "-"),
-                "circleMethod=", str(circle.get("method") if isinstance(circle, dict) else "-"),
-                "shape=", str(tuple(img_probe.shape)) if hasattr(img_probe, "shape") else "-",
-            )
-        except Exception:
-            pass
 
     return res
 

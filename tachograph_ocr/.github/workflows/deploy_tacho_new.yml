@@ -1,0 +1,67 @@
+name: Deploy Preview (tacho-new) to GitHub Pages
+
+"on":
+  workflow_dispatch:
+  push:
+    branches: [ demo ]
+    paths:
+      - "lib/**"
+      - "web/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/deploy_tacho_new.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-tacho-new
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Validate required variables
+        env:
+          ANALYZER_API_BASE_URL: ${{ vars.ANALYZER_API_BASE_URL }}
+        run: |
+          if [ -z "$ANALYZER_API_BASE_URL" ]; then
+            echo "Missing GitHub Variable: ANALYZER_API_BASE_URL"
+            exit 1
+          fi
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build web (Preview)
+        env:
+          ANALYZER_API_BASE_URL: ${{ vars.ANALYZER_API_BASE_URL }}
+        run: |
+          flutter build web --release \
+            --dart-define=DEMO_MODE=false \
+            --dart-define=SHOW_DEMO_TOGGLE=false \
+            --dart-define=ANALYZER_API_BASE_URL=$ANALYZER_API_BASE_URL \
+            --base-href "/tachograph_ocr/tacho-new/" \
+            --no-tree-shake-icons
+          cp build/web/index.html build/web/404.html
+
+      - name: Deploy to gh-pages (subdir)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build/web
+          destination_dir: tacho-new
+          enable_jekyll: false
+          keep_files: true
