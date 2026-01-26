@@ -37,6 +37,9 @@ class AnalyzeResult {
   final String? message;
   final String? hint;
   final String? debugImageBase64;
+  final String? debugTargetRegisteredBase64;
+  final String? diffCleanBase64;
+  final Map<String, dynamic>? processImages;
   final Map<String, dynamic>? meta;
 
   final String? needleTimeHHMM;
@@ -52,6 +55,9 @@ class AnalyzeResult {
     this.message,
     this.hint,
     this.debugImageBase64,
+    this.debugTargetRegisteredBase64,
+    this.diffCleanBase64,
+    this.processImages,
     this.meta,
     this.needleTimeHHMM,
     this.needleAngleDeg,
@@ -82,6 +88,12 @@ class AnalyzeResult {
       message: json['message']?.toString(),
       hint: json['hint']?.toString(),
       debugImageBase64: json['debugImageBase64']?.toString(),
+      debugTargetRegisteredBase64:
+          json['debugTargetRegisteredBase64']?.toString(),
+      diffCleanBase64: json['diffCleanBase64']?.toString(),
+      processImages: json['processImages'] is Map
+          ? (json['processImages'] as Map).cast<String, dynamic>()
+          : null,
       meta: meta,
       needleTimeHHMM: needleTimeHHMM,
       needleAngleDeg: needleAngleDeg,

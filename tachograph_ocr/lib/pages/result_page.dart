@@ -122,6 +122,8 @@ class _ResultPageState extends State<ResultPage> {
         widget.result.meta?['needleTimeHHMM']?.toString();
     final recordId = widget.result.recordId;
     final debugBytes = _tryDecodeBase64Image(widget.result.debugImageBase64);
+    final regBytes = _tryDecodeBase64Image(widget.result.debugTargetRegisteredBase64);
+    final diffBytes = _tryDecodeBase64Image(widget.result.diffCleanBase64);
     final circle = widget.result.meta?['circle'];
     final polarLog = widget.result.meta?['polarLog']?.toString();
 
@@ -283,6 +285,91 @@ class _ResultPageState extends State<ResultPage> {
               ),
             ),
             const SizedBox(height: 12),
+
+            if (regBytes != null || diffBytes != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF333333), width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '解析プロセス',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '位置合わせ後',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 6),
+                              AspectRatio(
+                                aspectRatio: 1,
+                                child: regBytes != null
+                                    ? InteractiveViewer(
+                                        minScale: 1.0,
+                                        maxScale: 4.0,
+                                        child: Image.memory(
+                                          regBytes,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      )
+                                    : const Center(child: Text('--')),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '抽出（threshold=15）',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 6),
+                              AspectRatio(
+                                aspectRatio: 1,
+                                child: diffBytes != null
+                                    ? InteractiveViewer(
+                                        minScale: 1.0,
+                                        maxScale: 4.0,
+                                        child: Image.memory(
+                                          diffBytes,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      )
+                                    : const Center(child: Text('--')),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if ((widget.result.processImages?['ok'] ?? false) == false) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'processImages: ${widget.result.processImages?['reason'] ?? 'n/a'}',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             const SizedBox(height: 10),
 

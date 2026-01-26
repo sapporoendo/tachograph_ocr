@@ -113,15 +113,11 @@ def _pick_template(input_dir: Path, template_arg: Optional[str]) -> Path:
             return p
         raise FileNotFoundError(f"template not found: {p}")
 
-    p1 = input_dir / "IMG_1035.jpg"
-    if p1.exists():
-        return p1
+    p = input_dir / "template.jpg"
+    if p.exists():
+        return p
 
-    p2 = input_dir / "template.jpg"
-    if p2.exists():
-        return p2
-
-    raise FileNotFoundError("template not found. Put IMG_1035.jpg or template.jpg under input/ or pass --template")
+    raise FileNotFoundError("template not found. Put template.jpg under input/ or pass --template")
 
 
 def _safe_relpath(path: str, start: str) -> str:

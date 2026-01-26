@@ -12,6 +12,7 @@ import hashlib
 import io
 import math
 import os
+import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
@@ -20,6 +21,8 @@ from PIL import Image
 from PIL import ImageOps
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+
+import core_processor
 
 
 app = FastAPI(title="tachograph_ocr api")
@@ -3513,6 +3516,12 @@ def analyze_image(
     trace_meta: Optional[Dict[str, Any]] = None
     method_reason: Optional[str] = None
 
+    # Optional: attach process images for presentation (registered + diff_clean with threshold=15).
+    # This is best-effort and must not break analysis if the template is unavailable.
+    res["debugTargetRegisteredBase64"] = ""
+    res["diffCleanBase64"] = ""
+    res["processImages"] = {"ok": False, "reason": "not_run"}
+
     if bool(include_debug):
         debug_b64, circle, needle_angle, polar_info, time_info, segments_info, trace_meta = make_debug_image_base64(
             image_bytes,
@@ -3577,7 +3586,8 @@ def analyze_image(
             meta_diag = res["meta"].get("diagnostics")
             if not isinstance(meta_diag, dict):
                 meta_diag = {}
-                res["meta"]["diagnostics"] = meta_diag
+
+            res["meta"]["diagnostics"] = meta_diag
             meta_diag["detectCircleError"] = str(e)
 
         if isinstance(circle_work, dict) and _circle_has_numeric_values(circle_work):
@@ -3972,6 +3982,51 @@ def analyze_image(
             )
         except Exception:
             pass
+
+    # Best-effort generation of process images
+    try:
+        template_path = os.getenv("TACHO_TEMPLATE_PATH", "").strip()
+        if not template_path:
+            here = os.path.dirname(os.path.abspath(__file__))
+            repo_root = os.path.abspath(os.path.join(here, ".."))
+            candidate = os.path.join(repo_root, "input", "template.jpg")
+            if os.path.exists(candidate):
+                template_path = candidate
+
+        if template_path and os.path.exists(template_path):
+            with tempfile.TemporaryDirectory(prefix="tacho_proc_") as td:
+                target_path = os.path.join(td, "target.jpg")
+                with open(target_path, "wb") as f:
+                    f.write(image_bytes)
+
+                outdir = os.path.join(td, "out")
+                proc = core_processor.process(
+                    template_path=str(template_path),
+                    target_path=str(target_path),
+                    outdir=str(outdir),
+                    threshold=15,
+                )
+                paths = proc.get("paths") if isinstance(proc, dict) else None
+                if isinstance(paths, dict):
+                    p_reg = paths.get("debug_target_registered")
+                    p_diff = paths.get("diff_clean")
+                    if isinstance(p_reg, str) and os.path.exists(p_reg):
+                        with open(p_reg, "rb") as f:
+                            res["debugTargetRegisteredBase64"] = base64.b64encode(f.read()).decode("ascii")
+                    if isinstance(p_diff, str) and os.path.exists(p_diff):
+                        with open(p_diff, "rb") as f:
+                            res["diffCleanBase64"] = base64.b64encode(f.read()).decode("ascii")
+                    res["processImages"] = {
+                        "ok": bool(res["debugTargetRegisteredBase64"] and res["diffCleanBase64"]),
+                        "templatePath": str(template_path),
+                        "threshold": 15,
+                    }
+                else:
+                    res["processImages"] = {"ok": False, "reason": "no_paths"}
+        else:
+            res["processImages"] = {"ok": False, "reason": "template_not_found"}
+    except Exception as e:
+        res["processImages"] = {"ok": False, "reason": f"{type(e).__name__}: {e}"}
 
     return res
 
