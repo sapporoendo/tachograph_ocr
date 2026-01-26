@@ -4,11 +4,7 @@ name: Deploy Demo to GitHub Pages
   push:
     branches: [ demo ]
     paths:
-      - "lib/**"
-      - "web/**"
-      - "assets/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
+      - "build/web/**"
       - ".github/workflows/deploy_demo.yml"
   workflow_dispatch:
 
@@ -34,23 +30,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Flutter pub get
-        run: flutter pub get
-
-      - name: Build web (DEMO_MODE)
+      - name: Verify build/web exists
         run: |
-          flutter build web --release \
-            --dart-define=DEMO_MODE=true \
-            --base-href "/tachograph_ocr/" \
-            --no-tree-shake-icons
-          cp build/web/index.html build/web/404.html
-          touch build/web/.nojekyll
+          test -f build/web/index.html
+          test -f build/web/404.html
+          test -f build/web/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

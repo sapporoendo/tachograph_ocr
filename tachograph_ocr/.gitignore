@@ -33,6 +33,11 @@ migrate_working_dir/
 /build/
 /coverage/
 
+!/build/web/
+!/build/web/**
+
+/build/web/.DS_Store
+
 .venv/
 
 # Symbolication related
